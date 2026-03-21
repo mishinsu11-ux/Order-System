@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Voucher System - Optimized</title>
+    <style>
+        @font-face { font-family: 'Pyidaungsu'; src: local('Pyidaungsu'); }
+        body { font-family: 'Pyidaungsu', sans-serif; background-color: #f4f7f6; padding: 10px; margin: 0; }
+        .container { background: white; padding: 20px; border-radius: 10px; max-width: 600px; margin: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .tab-buttons { display: flex; gap: 3px; margin-bottom: 15px; flex-wrap: wrap; }
+        .tab-btn { flex: 1; padding: 10px 5px; border: none; background: #e9ecef; cursor: pointer; border-radius: 6px; font-family: 'Pyidaungsu'; font-weight: bold; font-size: 12px; }
+        .tab-btn.active { background: #28a745; color: white; }
+        .tab-btn#btnVoucher.active { background: #007bff; }
+        .tab-btn#btnBackup.active { background: #fd7e14; }
+        .form-section { background: #fdfdfd; padding: 15px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: bold; color: #333; }
+        input, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ced4da; border-radius: 6px; box-sizing: border-box; font-family: 'Pyidaungsu'; font-size: 14px; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: 'Pyidaungsu'; margin-bottom: 5px; }
+        #addBtn, #saveDbBtn { background-color: #28a745; color: white; }
+        .main-btn { background-color: #007bff; color: white; }
+        .save-btn { background-color: #fd7e14; color: white; }
+        .back-btn { background-color: #6c757d; color: white; }
+        .list-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 12px; background: #fff; }
+        .list-table th, .list-table td { border: 1px solid #dee2e6; padding: 8px; text-align: left; }
+        .del-btn { background: #dc3545; color: white; padding: 4px 8px; border-radius: 4px; border: none; cursor: pointer; font-size: 10px; }
+        #canvasContainer { width: 100%; overflow: auto; margin-top: 20px; background: #555; padding: 20px; display: flex; justify-content: center; }
+        canvas { background: white; box-shadow: 0 0 20px rgba(0,0,0,0.5); max-width: 100%; height: auto; }
+    </style>
+</head>
+<body>
+
+    <div id="inputPage" class="container">
+        <div class="tab-buttons">
+            <button class="tab-btn active" id="btnDatabase" onclick="switchTab('database')">ကြိုတင်စာရင်းသွင်း</button>
+            <button class="tab-btn" id="btnVoucher" onclick="switchTab('voucher')">ဘောင်ချာထုတ်ရန်</button>
+            <button class="tab-btn" id="btnBackup" onclick="switchTab('backup')">သိမ်းဆည်း/ပြန်ခေါ်</button>
+        </div>
+
+        <div id="databaseTab">
+            <h3 style="text-align:center;">လူ/လက်နက် အချက်အလက်သိုလှောင်ရန်</h3>
+            <div class="form-section">
+                <select id="dbRank">
+                    <option value="">-- အဆင့်ရွေးပါ --</option>
+                    <option value="ဒုတိယဗိုလ်မှူးကြီး">ဒုတိယဗိုလ်မှူးကြီး</option>
+                    <option value="ဗိုလ်မှူး">ဗိုလ်မှူး</option>
+                    <option value="ဗိုလ်ကြီး">ဗိုလ်ကြီး</option>
+                    <option value="ဗိုလ်">ဗိုလ်</option>
+                    <option value="ဒုတိယဗိုလ်">ဒုတိယဗိုလ်</option>
+                    <option value="အရာခံဗိုလ်">အရာခံဗိုလ်</option>
+                    <option value="ဒုအရာခံဗိုလ်">ဒုအရာခံဗိုလ်</option>
+                    <option value="တပ်ခွဲတပ်ကြပ်ကြီး">တပ်ခွဲတပ်ကြပ်ကြီး</option>
+                    <option value="တပ်ကြပ်ကြီး">တပ်ကြပ်ကြီး</option>
+                    <option value="တပ်ကြပ်">တပ်ကြပ်</option>
+                    <option value="ဒုတပ်ကြပ်">ဒုတပ်ကြပ်</option>
+                    <option value="တပ်သား">တပ်သား</option>
+                </select>
+                <input type="text" id="dbName" placeholder="အမည်">
+                <input type="text" id="dbServiceNo" placeholder="ကိုယ်ပိုင်အမှတ်">
+                <select id="dbWpnType">
+                    <option value="အမ်အေ-၁">အမ်အေ-၁</option>
+                    <option value="အမ်အေ-၃">အမ်အေ-၃</option>
+                    <option value="အမ်အေ-၁၃">အမ်အေ-၁၃</option>
+                </select>
+                <input type="text" id="dbWpnNo" placeholder="လက်နက်နံပါတ်">
+                <button id="saveDbBtn" onclick="saveToDatabase()">Database ထဲသိမ်းမည်</button>
+            </div>
+            <div style="max-height: 200px; overflow-y: auto;">
+                <table class="list-table">
+                    <thead><tr><th>အမည်</th><th>အမှတ်</th><th>ဖျက်</th></tr></thead>
+                    <tbody id="dbListBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="voucherTab" style="display:none;">
+            <h3 style="text-align:center;">ဘောင်ချာထုတ်ရန်</h3>
+            <div class="form-section">
+                <select id="unitSelect">
+                    <option value="ဌာနချုပ်တပ်ခွဲ">ဌာနချုပ်တပ်ခွဲ</option>
+                    <option value="အမှတ်(၁)တပ်ခွဲ">အမှတ်(၁)တပ်ခွဲ</option>
+                    <option value="အမှတ်(၂)တပ်ခွဲ" selected>အမှတ်(၂)တပ်ခွဲ</option>
+                    <option value="အလုပ်ရုံတပ်ခွဲ">အလုပ်ရုံတပ်ခွဲ</option>
+                </select>
+                
+                <label for="orderDate">ရက်စွဲထည့်ရန် -</label>
+                <input type="date" id="orderDate">
+
+                <select id="nameSelect" onchange="autoFillData()">
+                    <option value="">-- အမည်ရွေးပါ (Database မှ) --</option>
+                </select>
+                <div style="display: flex; gap: 5px;">
+                    <input type="text" id="rank" placeholder="အဆင့်" readonly style="background: #eee;">
+                    <input type="text" id="serviceNo" placeholder="ကိုယ်ပိုင်အမှတ်" readonly style="background: #eee;">
+                </div>
+                <div style="display: flex; gap: 5px;">
+                    <input type="text" id="wpnType" placeholder="လက်နက်အမျိုးအစား" readonly style="background: #eee;">
+                    <input type="text" id="wpnNo" placeholder="လက်နက်နံပါတ်" readonly style="background: #eee;">
+                </div>
+                <div style="display:flex; gap:5px;">
+                    <input type="text" id="mag" placeholder="ကျည်အိမ်">
+                    <input type="text" id="sling" placeholder="လွယ်ကြိုး">
+                    <input type="text" id="bayonet" placeholder="လှံစွပ်">
+                </div>
+                <input type="number" id="indivAmmo" placeholder="ကျည်အရေအတွက်">
+                <button id="addBtn" onclick="addPersonnel()">စာရင်းသွင်းမည်</button>
+            </div>
+            <table class="list-table" id="personTable" style="display:none;">
+                <thead><tr><th>အမည်</th><th>လက်နက်</th><th>ဖျက်</th></tr></thead>
+                <tbody id="tbody"></tbody>
+            </table>
+            <button class="main-btn" onclick="showPreview()">ဘောင်ချာဒီဇိုင်း ကြည့်မည်</button>
+        </div>
+
+        <div id="backupTab" style="display:none;">
+            <h3 style="text-align:center;">Backup System</h3>
+            <div class="form-section">
+                <button class="backup-btn" onclick="exportData()">Backup ဖိုင်ထုတ်ယူမည် (.json)</button>
+                <hr>
+                <input type="file" id="importFile" accept=".json">
+                <button class="restore-btn" onclick="importData()">Backup ဖိုင်မှ ပြန်တင်မည်</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="previewPage" class="container" style="display: none; max-width: 100%; width: 95%;">
+        <div id="canvasContainer"><canvas id="voucherCanvas"></canvas></div>
+        <button class="save-btn" onclick="downloadPNG()">PNG ပုံသိမ်းဆည်းမည်</button>
+        <button class="back-btn" onclick="backToInput()">နောက်သို့ပြန်သွားရန်</button>
+    </div>
+
+    <script>
+        let personnelList = [];
+        let database = JSON.parse(localStorage.getItem('wpnDatabase')) || [];
+        const canvas = document.getElementById('voucherCanvas');
+        const ctx = canvas.getContext('2d');
+        const scale = 3; 
+        canvas.width = 8.5 * 96 * scale; 
+        canvas.height = 14 * 96 * scale;
+        const marginPx = 0.5 * 96 * scale;
+
+        function switchTab(tab) {
+            document.getElementById('databaseTab').style.display = tab === 'database' ? 'block' : 'none';
+            document.getElementById('voucherTab').style.display = tab === 'voucher' ? 'block' : 'none';
+            document.getElementById('backupTab').style.display = tab === 'backup' ? 'block' : 'none';
+            document.getElementById('btnDatabase').classList.toggle('active', tab === 'database');
+            document.getElementById('btnVoucher').classList.toggle('active', tab === 'voucher');
+            document.getElementById('btnBackup').classList.toggle('active', tab === 'backup');
+            updateNameSelect();
+            updateDbList();
+        }
+
+        function saveToDatabase() {
+            const entry = { rank: document.getElementById('dbRank').value, name: document.getElementById('dbName').value, id: document.getElementById('dbServiceNo').value, type: document.getElementById('dbWpnType').value, no: document.getElementById('dbWpnNo').value };
+            if(!entry.name || !entry.id || !entry.rank) return alert("အချက်အလက်စုံလင်စွာဖြည့်ပါ");
+            database.push(entry);
+            localStorage.setItem('wpnDatabase', JSON.stringify(database));
+            updateDbList();
+            ['dbName','dbRank','dbServiceNo','dbWpnNo'].forEach(id => document.getElementById(id).value = '');
+        }
+
+        function updateDbList() {
+            const tbody = document.getElementById('dbListBody');
+            if(!tbody) return;
+            tbody.innerHTML = database.map((p, i) => `<tr><td>${p.rank} ${p.name}</td><td>${p.id}</td><td><button class="del-btn" onclick="removeFromDb(${i})">ဖျက်</button></td></tr>`).join('');
+        }
+
+        function removeFromDb(i) {
+            if(confirm("ဖျက်မှာ သေချာပါသလား?")) {
+                database.splice(i, 1);
+                localStorage.setItem('wpnDatabase', JSON.stringify(database));
+                updateDbList();
+                updateNameSelect();
+            }
+        }
+
+        function exportData() {
+            const dataStr = JSON.stringify(database);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `wpn_backup.json`;
+            link.click();
+        }
+
+        function importData() {
+            const fileInput = document.getElementById('importFile');
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                database = database.concat(JSON.parse(e.target.result));
+                localStorage.setItem('wpnDatabase', JSON.stringify(database));
+                alert("စာရင်းများ ပြန်တင်ပြီးပါပြီ");
+                updateDbList();
+            };
+            reader.readAsText(fileInput.files[0]);
+        }
+
+        function updateNameSelect() {
+            const select = document.getElementById('nameSelect');
+            if(!select) return;
+            select.innerHTML = '<option value="">-- အမည်ရွေးပါ (Database မှ) --</option>';
+            database.forEach((p, idx) => {
+                select.innerHTML += `<option value="${idx}">${p.rank} ${p.name}</option>`;
+            });
+        }
+
+        function autoFillData() {
+            const idx = document.getElementById('nameSelect').value;
+            if(idx === "") return;
+            const p = database[idx];
+            document.getElementById('serviceNo').value = p.id;
+            document.getElementById('rank').value = p.rank;
+            document.getElementById('wpnType').value = p.type;
+            document.getElementById('wpnNo').value = p.no;
+        }
+
+        function addPersonnel() {
+            if (personnelList.length >= 4) return alert("လူ ၄ ဦးပြည့်ပါပြီ");
+            const idx = document.getElementById('nameSelect').value;
+            if(idx === "") return;
+            const p = database[idx];
+            personnelList.push({
+                name: p.name, rank: p.rank, id: p.id, type: p.type, no: p.no,
+                mag: document.getElementById('mag').value,
+                sling: document.getElementById('sling').value,
+                bayonet: document.getElementById('bayonet').value,
+                ammo: document.getElementById('indivAmmo').value || "၀"
+            });
+            updateTable();
+        }
+
+        function updateTable() {
+            const tbody = document.getElementById('tbody');
+            document.getElementById('personTable').style.display = personnelList.length > 0 ? "table" : "none";
+            tbody.innerHTML = personnelList.map((p, i) => `<tr><td>${p.rank} ${p.name}</td><td>${p.type}</td><td><button class="del-btn" onclick="personnelList.splice(${i},1);updateTable()">ဖျက်</button></td></tr>`).join('');
+        }
+
+        function toMyanmarNum(num) {
+            if (!num) return "";
+            const mNums = ['၀', '၁', '၂', '၃', '၄', '၅', '၆', '၇', '၈', '၉'];
+            return num.toString().replace(/[0-9]/g, m => mNums[m]);
+        }
+
+        function showPreview() {
+            document.getElementById('inputPage').style.display = 'none';
+            document.getElementById('previewPage').style.display = 'block';
+            setTimeout(drawVoucher, 100);
+        }
+
+        function drawVoucher() {
+            ctx.fillStyle = "white"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            drawHalf(0); drawHalf(canvas.height / 2);
+        }
+
+        function drawHalf(startY) {
+            ctx.fillStyle = "black"; 
+            const centerX = canvas.width / 2;
+            const innerHeight = (canvas.height / 2) - (marginPx * 2);
+            const innerBottom = startY + marginPx + innerHeight;
+            const startX = marginPx + (30 * scale); 
+            const endX = canvas.width - marginPx - (30 * scale);
+            const selectedUnit = document.getElementById('unitSelect').value;
+
+            ctx.strokeStyle = "black"; ctx.setLineDash([10, 10]);
+            ctx.strokeRect(marginPx, startY + marginPx, canvas.width - (marginPx * 2), innerHeight);
+            ctx.setLineDash([]);
+            
+            ctx.font = `bold ${18 * scale}px Pyidaungsu`; ctx.textAlign = "center";
+            ctx.fillText("လက်နက်/ခဲယမ်း ထုတ်ယူခွင့် အမိန့်အာဏာ", centerX, startY + marginPx + (25 * scale));
+            
+            ctx.font = `${13 * scale}px Pyidaungsu`;
+            let line1Y = startY + marginPx + (65 * scale);
+            ctx.fillText("အမှတ်(၇၀၁၀)သံချပ်ကာတိုက်ခိုက်ရေးတပ်ရင်း၊ " + selectedUnit + "မှ အောက်ပါ လက်နက်/ခဲယမ်း များအား ထုတ်ပေးခွင့်ပြုလိုက်သည်-", centerX, line1Y);
+
+            let headers = ["စဉ်", "ကိုယ်ပိုင်အမှတ်", "အဆင့်", "အမည်", "လက်နက်အမျိုးအစား", "လက်နက်နံပါတ်", "ကျည်အိမ်", "လွယ်ကြိုး", "လှံစွပ်"];
+            let colStep = (endX - startX) / 8;
+            
+            ctx.font = `bold ${10 * scale}px Pyidaungsu`;
+            headers.forEach((h, i) => {
+                ctx.textAlign = (i === 0) ? "left" : (i === 8) ? "right" : "center";
+                ctx.fillText(h, startX + (i * colStep), line1Y + (35 * scale));
+            });
+
+            ctx.font = `${11 * scale}px Pyidaungsu`;
+            for (let i = 0; i < 4; i++) {
+                let y = line1Y + (70 * scale) + (i * 35 * scale);
+                ctx.textAlign = "left"; ctx.fillText(toMyanmarNum(i+1) + "။", startX, y);
+                if (personnelList[i]) {
+                    let p = personnelList[i];
+                    let vals = [p.id, p.rank, p.name, p.type, p.no, p.mag, p.sling, p.bayonet];
+                    vals.forEach((v, j) => {
+                        ctx.textAlign = (j === 7) ? "right" : "center";
+                        ctx.fillText(v, startX + ((j+1) * colStep), y);
+                    });
+                }
+                ctx.beginPath(); ctx.moveTo(startX, y+8*scale); ctx.lineTo(endX, y+8*scale); ctx.strokeStyle="#bbb"; ctx.stroke();
+            }
+
+            ctx.font = `${14 * scale}px Pyidaungsu`;
+            let yAmmo = line1Y + (220 * scale);
+            ctx.textAlign = "left";
+            let ammoVal = document.getElementById('indivAmmo').value || "၀";
+            ctx.fillText("( ကျည်တစ်လက်လျှင် " + toMyanmarNum(ammoVal) + " တောင့်နှုန်း )", startX, yAmmo);
+
+            let yCertify = yAmmo + (35 * scale);
+            ctx.textAlign = "center";
+            ctx.fillText("ထပ်ဆင့်လက်မှတ်", centerX, yCertify);
+
+            // --- တပ်ရင်းမှူး နှင့် တပ်ရင်းအမည် ညှိသည့်အပိုင်း ---
+            let yCO = yCertify + (80 * scale); 
+            ctx.font = `${14 * scale}px Pyidaungsu`;
+            ctx.textAlign = "center";
+            let coTitle = "တပ်ရင်းမှူး";
+            ctx.fillText(coTitle, centerX, yCO);
+
+            // တပ်ရင်းမှူး ရဲ့ ညာဘက်အစွန်းကို တွက်ချက်ခြင်း
+            let coWidth = ctx.measureText(coTitle).width;
+            let rightEdgeX = centerX + (coWidth / 2);
+
+            // တပ်ရင်းအမည်ကို ညာဘက်ချင်းညှိခြင်း
+            ctx.textAlign = "right";
+            ctx.font = `${14 * scale}px Pyidaungsu`;
+            ctx.fillText("အမှတ်(၇၀၁၀)သံချပ်ကာတိုက်ခိုက်ရေးတပ်ရင်း", rightEdgeX, yCO + (30 * scale));
+            // ------------------------------------------
+
+            let yRank1 = innerBottom - (75 * scale);
+            let yRank2 = innerBottom - (40 * scale);
+            let alignX = startX + (150 * scale); 
+
+            ctx.textAlign = "left";
+            ctx.fillText("နေရာ။     အင်း   တိုင်", startX, yRank1);
+            ctx.fillText("။", alignX, yRank1);
+
+            let d = document.getElementById('orderDate').value;
+            let dateStr = d ? toMyanmarNum(d.split('-').reverse().join('-')) : "      -      - ၂၀၂၆";
+            ctx.fillText("ရက်စွဲ။     " + dateStr, startX, yRank2);
+            ctx.fillText("။", alignX, yRank2); 
+
+            ctx.textAlign = "center";
+            ctx.fillText("တပ်ခွဲမှူး", endX - (60 * scale), yRank1);
+            ctx.fillText(selectedUnit, endX - (60 * scale), yRank2);
+        }
+
+        function downloadPNG() {
+            const link = document.createElement('a'); link.download = 'Voucher_Complete.png';
+            link.href = canvas.toDataURL(); link.click();
+        }
+        function backToInput() { document.getElementById('previewPage').style.display='none'; document.getElementById('inputPage').style.display='block'; }
+        
+        updateDbList();
+        updateNameSelect();
+    </script>
+</body>
+</html>
