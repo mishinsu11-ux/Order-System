@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Voucher System - Optimized</title>
+    <title>Voucher System - Full Version</title>
     <style>
         @font-face { font-family: 'Pyidaungsu'; src: local('Pyidaungsu'); }
         body { font-family: 'Pyidaungsu', sans-serif; background-color: #f4f7f6; padding: 10px; margin: 0; }
@@ -19,6 +19,7 @@
         button { width: 100%; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-family: 'Pyidaungsu'; margin-bottom: 5px; }
         #addBtn, #saveDbBtn { background-color: #28a745; color: white; }
         .main-btn { background-color: #007bff; color: white; }
+        .share-btn { background-color: #28a745; color: white; } /* Green for Share */
         .save-btn { background-color: #fd7e14; color: white; }
         .back-btn { background-color: #6c757d; color: white; }
         .list-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 12px; background: #fff; }
@@ -115,16 +116,17 @@
         <div id="backupTab" style="display:none;">
             <h3 style="text-align:center;">Backup System</h3>
             <div class="form-section">
-                <button class="backup-btn" onclick="exportData()">Backup ဖိုင်ထုတ်ယူမည် (.json)</button>
+                <button class="save-btn" onclick="exportData()">Backup ဖိုင်ထုတ်ယူမည် (.json)</button>
                 <hr>
                 <input type="file" id="importFile" accept=".json">
-                <button class="restore-btn" onclick="importData()">Backup ဖိုင်မှ ပြန်တင်မည်</button>
+                <button class="main-btn" onclick="importData()">Backup ဖိုင်မှ ပြန်တင်မည်</button>
             </div>
         </div>
     </div>
 
     <div id="previewPage" class="container" style="display: none; max-width: 100%; width: 95%;">
         <div id="canvasContainer"><canvas id="voucherCanvas"></canvas></div>
+        <button class="share-btn" onclick="shareVoucher()">တိုက်ရိုက် Share မည်</button>
         <button class="save-btn" onclick="downloadPNG()">PNG ပုံသိမ်းဆည်းမည်</button>
         <button class="back-btn" onclick="backToInput()">နောက်သို့ပြန်သွားရန်</button>
     </div>
@@ -186,12 +188,16 @@
 
         function importData() {
             const fileInput = document.getElementById('importFile');
+            if(!fileInput.files[0]) return alert("ဖိုင်ရွေးပါ");
             const reader = new FileReader();
             reader.onload = function(e) {
-                database = database.concat(JSON.parse(e.target.result));
-                localStorage.setItem('wpnDatabase', JSON.stringify(database));
-                alert("စာရင်းများ ပြန်တင်ပြီးပါပြီ");
-                updateDbList();
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    database = database.concat(imported);
+                    localStorage.setItem('wpnDatabase', JSON.stringify(database));
+                    alert("စာရင်းများ ပြန်တင်ပြီးပါပြီ");
+                    updateDbList();
+                } catch(err) { alert("ဖိုင်အမျိုးအစား မှားယွင်းနေပါသည်။"); }
             };
             reader.readAsText(fileInput.files[0]);
         }
@@ -307,22 +313,16 @@
             ctx.textAlign = "center";
             ctx.fillText("ထပ်ဆင့်လက်မှတ်", centerX, yCertify);
 
-            // --- တပ်ရင်းမှူး နှင့် တပ်ရင်းအမည် ညှိသည့်အပိုင်း ---
             let yCO = yCertify + (80 * scale); 
             ctx.font = `${14 * scale}px Pyidaungsu`;
             ctx.textAlign = "center";
             let coTitle = "တပ်ရင်းမှူး";
             ctx.fillText(coTitle, centerX, yCO);
 
-            // တပ်ရင်းမှူး ရဲ့ ညာဘက်အစွန်းကို တွက်ချက်ခြင်း
             let coWidth = ctx.measureText(coTitle).width;
             let rightEdgeX = centerX + (coWidth / 2);
-
-            // တပ်ရင်းအမည်ကို ညာဘက်ချင်းညှိခြင်း
             ctx.textAlign = "right";
-            ctx.font = `${14 * scale}px Pyidaungsu`;
             ctx.fillText("အမှတ်(၇၀၁၀)သံချပ်ကာတိုက်ခိုက်ရေးတပ်ရင်း", rightEdgeX, yCO + (30 * scale));
-            // ------------------------------------------
 
             let yRank1 = innerBottom - (75 * scale);
             let yRank2 = innerBottom - (40 * scale);
@@ -340,6 +340,26 @@
             ctx.textAlign = "center";
             ctx.fillText("တပ်ခွဲမှူး", endX - (60 * scale), yRank1);
             ctx.fillText(selectedUnit, endX - (60 * scale), yRank2);
+        }
+
+        async function shareVoucher() {
+            try {
+                const dataUrl = canvas.toDataURL('image/png');
+                const blob = await (await fetch(dataUrl)).blob();
+                const file = new File([blob], 'voucher_order.png', { type: 'image/png' });
+
+                if (navigator.share) {
+                    await navigator.share({
+                        files: [file],
+                        title: 'လက်နက်/ခဲယမ်းထုတ်ယူခွင့်',
+                        text: 'တပ်ရင်းမှ ထုတ်ပေးလိုက်သော ဘောင်ချာဖိုင်',
+                    });
+                } else {
+                    alert("သင့် Browser သည် တိုက်ရိုက် Share ခြင်းကို မပံ့ပိုးပါ။ ပုံကို အရင် Save ပြီးမှ ပို့ပေးပါ။");
+                }
+            } catch (err) {
+                alert("Share လုပ်ရာတွင် အမှားအယွင်းရှိခဲ့ပါသည်။");
+            }
         }
 
         function downloadPNG() {
